@@ -12,6 +12,9 @@
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh; /* Ensure the body takes at least the full viewport height */
         }
 
         /* Navbar Styling */
@@ -37,27 +40,10 @@
             color: #f1c40f !important; /* Yellow color on hover */
         }
 
-        /* Enhanced Select Dropdown */
-        .form-select {
-            width: 220px;
-            height: 44px;
-            border-radius: 30px;
-            padding: 10px 20px;
-            font-size: 15px;
-            border: 2px solid #e0e0e0;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23666" width="18" height="18"><path d="M7 10l5 5 5-5z"/></svg>');
-            background-position: right 15px center;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .form-select:hover {
-            border-color: #4dabf7;
-            box-shadow: 0 2px 8px rgba(77, 171, 247, 0.2);
-        }
-
-        .form-select:focus {
-            border-color: #228be6;
-            box-shadow: 0 0 0 3px rgba(34, 139, 230, 0.15);
+        /* Active Sheet Link */
+        .navbar-nav .nav-link.active {
+            color: #f1c40f !important; /* Highlight active sheet */
+            font-weight: 700;
         }
 
         /* Modern Search Bar */
@@ -190,8 +176,8 @@
 
         /* Search and Filter Container */
         .search-filter-container {
-            margin-top: 2rem;
-            margin-bottom: 2rem;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
             display: flex;
             gap: 1rem;
             flex-wrap: wrap;
@@ -239,7 +225,7 @@
             background: linear-gradient(135deg, #2c3e50, #3498db);
             color: white;
             padding: 2rem 0;
-            margin-top: 4rem;
+            margin-top: auto; /* Push footer to the bottom */
             text-align: center;
         }
 
@@ -263,11 +249,6 @@
         @media (max-width: 767.98px) {
             .navbar-collapse {
                 padding-top: 1rem;
-            }
-            
-            .form-select {
-                width: 100%;
-                margin: 0.5rem 0;
             }
 
             .form-control {
@@ -323,11 +304,6 @@
                 flex: 0 0 33.33%; /* 3 cards per row on desktop */
                 max-width: 33.33%;
             }
-
-            /* Align sheet selector to the right on desktop */
-            .navbar-nav.ms-auto {
-                margin-left: auto !important;
-            }
         }
     </style>
 </head>
@@ -348,12 +324,8 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0"> <!-- ms-auto to align right -->
-                    <li class="nav-item">
-                        <select id="sheetSelector" class="form-select">
-                            <option value="ddd">Loading...</option>
-                        </select>
-                    </li>
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0" id="sheetNav">
+                    <!-- Sheets will be dynamically added here -->
                 </ul>
             </div>
         </div>
@@ -430,11 +402,19 @@
             fetch(`${API_URL}?action=getSheets`)
                 .then(response => response.json())
                 .then(sheets => {
-                    let selector = $("#sheetSelector");
-                    selector.empty();
-                    sheets.forEach(sheet => selector.append(`<option value="${sheet}">${sheet}</option>`));
+                    let sheetNav = $("#sheetNav");
+                    sheetNav.empty();
+                    sheets.forEach(sheet => {
+                        sheetNav.append(`
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-sheet="${sheet}">${sheet}</a>
+                            </li>
+                        `);
+                    });
                     currentSheet = sheets[0];
                     fetchProducts(currentSheet);
+                    // Highlight the first sheet as active
+                    $(".nav-link").first().addClass("active");
                 });
         }
 
@@ -513,9 +493,14 @@
 
         $(document).ready(() => {
             fetchSheets();
-            $("#sheetSelector").change(() => {
-                currentSheet = $("#sheetSelector").val();
+            // Handle sheet selection
+            $(document).on("click", ".nav-link", function (e) {
+                e.preventDefault();
+                currentSheet = $(this).data("sheet");
                 fetchProducts(currentSheet);
+                // Highlight the selected sheet
+                $(".nav-link").removeClass("active");
+                $(this).addClass("active");
             });
             $("#search").on("input", searchProducts);
         });
